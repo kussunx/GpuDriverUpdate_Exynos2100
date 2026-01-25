@@ -1,7 +1,10 @@
 Blobs are extracted from Vivo stock ROMs.
 This is a module, install it like a module.
 See [releases](https://github.com/elitetest1/GpuDriverUpdate_Exynos2100/releases) for module downloads.
+
+
 WARNING:
+
 You need to flash https://modules.kernelsu.org/module/meta-mm/ if u are using newer versions of KernelSU Next
 
 Thanks to @daubfy for testing
