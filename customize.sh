@@ -23,7 +23,7 @@ check_conflicting_modules() {
 ui_print " "
 ui_print " Version: $MODVER"
 ui_print " Mali GPU driver updater"
-ui_print " GPU: Mali G68 MP4"
+ui_print " GPU: Mali G78 MP14"
 ui_print " "
 
 # Check for conflicts before proceeding
