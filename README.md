@@ -1,3 +1,3 @@
-Blobs are extracted from Samsung stock ROMs.
+Blobs are extracted from Vivo stock ROMs.
 
-See [releases](https://github.com/Flopster101/GpuDriverUpdate_s5e8825/releases) for module downloads.
+See [releases](https://github.com/elitetest1/GpuDriverUpdate_Exynos2100/releases) for module downloads.
