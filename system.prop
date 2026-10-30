@@ -1,0 +1,4 @@
+# Android's EGL loader supports persistent multifile blob caches.
+# Keep the ROM/framework's own storage limit (do not force a size).
+# See README: OpenGL ES shader-cache optimization / opt-out.
+ro.egl.blobcache.multifile=true
