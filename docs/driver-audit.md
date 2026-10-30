@@ -45,3 +45,7 @@ The script checks ELF class, machine and `ET_DYN` for the two main Mali driver b
 - The existing `vulkan.mali.so` files each declare `DT_NEEDED: libGLES_mali.so`. Even with Vulkan development explicitly out of scope, changing the shared Mali binary could indirectly affect Vulkan clients. **Do not** treat the APIs as completely independent libraries.
 - The SHA-256 values collected from the successful runner are pinned in `tools/mali-r38p1-baseline.sha256` and checked in CI. Updating the binaries deliberately requires changing this manifest in a reviewed commit.
 - No performance improvement, video-flicker fix, or Android runtime verification is claimed.
+
+## Same-architecture loader ABI checks
+
+The Vulkan loader stubs already ship in the baseline. Static auditing found the undefined `vkAcquireImageANDROID` symbol in both loader stubs. The auditor now verifies that each pre-existing stub's Vulkan-named undefined dynamic symbols are exported by the **matching-architecture** `libGLES_mali.so`. This does not modify, update or optimize Vulkan; it checks the direct dependency of artifacts already shipped together. A missing export is a static compatibility failure, not a proof of a video playback problem.

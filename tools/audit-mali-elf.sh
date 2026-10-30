@@ -57,6 +57,41 @@ inspect() {
   printf -- '- Graphics-related undefined symbols: %s\n\n' "${imports:-none from sample list}"
 }
 
+check_loader_linkage() {
+  local stub=$1 core=$2 imports symbol
+  printf '### Loader-to-Mali ABI: `%s`\n\n' "$stub"
+  if [[ ! -f "$stub" || ! -f "$core" ]]; then
+    echo '**ERROR:** missing linked libraries'
+    failures=$((failures + 1))
+    return
+  fi
+  if ! readelf -dW "$stub" | grep -Fq 'Shared library: [libGLES_mali.so]'; then
+    echo '**ERROR:** loader does not link to libGLES_mali.so'
+    failures=$((failures + 1))
+    return
+  fi
+  imports=$(readelf --dyn-syms -W "$stub" | awk '$7 == "UND" && $8 ~ /^vk/ {print $8}' | sed 's/@.*//' | sort -u)
+  if [[ -z "$imports" ]]; then
+    echo '**NOTE:** no Vulkan-named undefined dynamic symbols found'
+    echo
+    return
+  fi
+  while IFS= read -r symbol; do
+    if readelf --dyn-syms -W "$core" | awk -v expected="$symbol" '
+      $5 ~ /^(GLOBAL|WEAK)$/ && $7 != "UND" {
+        name=$8; sub(/@.*/, "", name)
+        if (name == expected) found=1
+      }
+      END {exit !found}'; then
+      printf -- '- Resolved from matching Mali binary: `%s`\n' "$symbol"
+    else
+      printf '**ERROR:** unresolved from matching Mali binary: `%s`\n' "$symbol"
+      failures=$((failures + 1))
+    fi
+  done <<< "$imports"
+  echo
+}
+
 printf '# Mali r38p1 ELF/ABI inventory\n\n'
 printf '> Static analysis of repository artifacts. No runtime/conformance claims.\n\n'
 inspect 'system/vendor/lib/egl/libGLES_mali.so' ELF32 ARM
@@ -64,6 +99,9 @@ inspect 'system/vendor/lib64/egl/libGLES_mali.so' ELF64 AArch64
 # Vulkan loader stubs are inspected only as linkage context, never modified.
 inspect 'system/vendor/lib/hw/vulkan.mali.so' ELF32 ARM
 inspect 'system/vendor/lib64/hw/vulkan.mali.so' ELF64 AArch64
+
+check_loader_linkage 'system/vendor/lib/hw/vulkan.mali.so' 'system/vendor/lib/egl/libGLES_mali.so'
+check_loader_linkage 'system/vendor/lib64/hw/vulkan.mali.so' 'system/vendor/lib64/egl/libGLES_mali.so'
 
 if [[ $failures -gt 0 ]]; then
   printf '**Audit failed:** %d file(s) missing or with mismatched ELF headers.\n' "$failures"
