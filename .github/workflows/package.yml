@@ -1,0 +1,26 @@
+name: Package verified Mali module
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build verified installable ZIP
+        run: |
+          bash -n tools/build-module.sh
+          sh -n tools/check-device-compat.sh
+          bash tools/build-module.sh dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mali-Exynos2100-flashable
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+          retention-days: 30
