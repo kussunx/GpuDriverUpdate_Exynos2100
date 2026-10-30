@@ -51,7 +51,10 @@ inspect() {
   printf -- '- GNU_RELRO: %s; GNU_STACK: %s; TEXTREL: %s\n' "$relro" "$stack_status" "$textrel"
   exports=$(readelf --dyn-syms -W "$path" | awk '
     $5 ~ /^(GLOBAL|WEAK)$/ && $7 != "UND" && $8 ~ /^(eglGetProcAddress|eglInitialize|glGetString|glCompileShader|vkGetInstanceProcAddr|vk_icdGetInstanceProcAddr|vkNegotiateLoaderICDInterfaceVersion)(@.*)?$/ { print $8 }' | sort -u | awk 'BEGIN {s=""} {s=s (NR>1 ? ", " : "") $0} END {print s}')
-  printf -- '- Selected exported entrypoints: %s\n\n' "${exports:-none from sample list}"
+  printf -- '- Selected exported entrypoints: %s\n' "${exports:-none from sample list}"
+  # Undefined graphics entrypoints indicate ABI linkage, not runtime capability.
+  imports=$(readelf --dyn-syms -W "$path" | awk '$7 == "UND" && $8 ~ /^(egl|gl|vk|ANativeWindow)/ {print $8}' | sort -u | awk 'BEGIN {s=""} {s=s (NR>1 ? ", " : "") $0} END {print s}')
+  printf -- '- Graphics-related undefined symbols: %s\n\n' "${imports:-none from sample list}"
 }
 
 printf '# Mali r38p1 ELF/ABI inventory\n\n'

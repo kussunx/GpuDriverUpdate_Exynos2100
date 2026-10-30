@@ -25,6 +25,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate script syntax
         run: bash -n tools/audit-mali-elf.sh
+      - name: Verify known-good driver hashes
+        run: sha256sum --check tools/mali-r38p1-baseline.sha256
       - name: Inspect Mali binaries
         run: |
           bash tools/audit-mali-elf.sh | tee mali-elf-report.md

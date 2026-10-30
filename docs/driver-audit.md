@@ -36,3 +36,12 @@ The script checks ELF class, machine and `ET_DYN` for the two main Mali driver b
 1. Compare the 32-bit/64-bit `DT_NEEDED` sets and loader entrypoints against the target ROM's published vendor ABI; identify absent or mismatched dependencies.
 2. Check kernel-mode (KMD) and user-mode (UMD) interface negotiation for the exact firmware in scope; do not assume that matching `r38p1` labels guarantees ABI compatibility.
 3. Only propose a driver change after a reproducible defect and a verification procedure exist; otherwise preserve known-working blobs.
+
+## Findings from the first successful CI run (2026-10-30)
+
+- Both Mali driver libraries are correctly classified as 32-bit ARM / 64-bit AArch64 shared objects (ET_DYN). EGL/OpenGL ES entrypoints including `eglGetProcAddress`, `eglInitialize`, `glCompileShader`, and `glGetString` are exported in both variants.
+- The observed security metadata includes GNU_RELRO and non-executable GNU_STACK; no dynamic TEXTREL marker was reported. This does **not** establish that the binaries have no exploitable vulnerabilities.
+- Both `libGLES_mali.so` variants depend on `libnativewindow.so`, `libgralloctypes.so`, `libion_exynos.so`, `android.hardware.graphics.mapper@4.0.so`, and other Android libraries. These dependencies must be resolved in the target system's linker namespaces.
+- The existing `vulkan.mali.so` files each declare `DT_NEEDED: libGLES_mali.so`. Even with Vulkan development explicitly out of scope, changing the shared Mali binary could indirectly affect Vulkan clients. **Do not** treat the APIs as completely independent libraries.
+- The SHA-256 values collected from the successful runner are pinned in `tools/mali-r38p1-baseline.sha256` and checked in CI. Updating the binaries deliberately requires changing this manifest in a reviewed commit.
+- No performance improvement, video-flicker fix, or Android runtime verification is claimed.
