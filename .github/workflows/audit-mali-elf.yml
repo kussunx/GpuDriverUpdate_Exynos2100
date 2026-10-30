@@ -1,0 +1,40 @@
+name: Audit Mali ELF ABI
+
+on:
+  push:
+    paths:
+      - 'system/vendor/lib/**'
+      - 'system/vendor/lib64/**'
+      - 'tools/audit-mali-elf.sh'
+      - '.github/workflows/audit-mali-elf.yml'
+  pull_request:
+    paths:
+      - 'system/vendor/lib/**'
+      - 'system/vendor/lib64/**'
+      - 'tools/audit-mali-elf.sh'
+      - '.github/workflows/audit-mali-elf.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate script syntax
+        run: bash -n tools/audit-mali-elf.sh
+      - name: Verify known-good driver hashes
+        run: sha256sum --check tools/mali-r38p1-baseline.sha256
+      - name: Inspect Mali binaries
+        run: |
+          bash tools/audit-mali-elf.sh | tee mali-elf-report.md
+          cat mali-elf-report.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mali-elf-report
+          path: mali-elf-report.md
+          if-no-files-found: warn

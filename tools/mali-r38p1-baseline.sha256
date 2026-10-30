@@ -1,0 +1,4 @@
+64d909a8c21288c85ccfbe5c15c4234a61b7918fc19f6b6d8015b8b1ed1c9685  system/vendor/lib/egl/libGLES_mali.so
+518e96a79b28f9a8104ac2a3de53bbe8ab3b72d76b3d8ad29e6b34762335067f  system/vendor/lib64/egl/libGLES_mali.so
+84a802d19b59519e8bc3b710a1a97053517b8fa6061655a0b116fc2d0b85aa35  system/vendor/lib/hw/vulkan.mali.so
+6f18b22bb1d4d953750279880f99064b759014d8acec19e5ca33326350f8666e  system/vendor/lib64/hw/vulkan.mali.so
