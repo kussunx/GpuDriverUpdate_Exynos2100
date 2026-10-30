@@ -1,0 +1,21 @@
+name: Validate Vulkan 1.3 feature compatibility
+on:
+  push:
+    paths:
+      - 'system/vendor/etc/permissions/**'
+      - 'tests/check-vulkan-features.py'
+      - '.github/workflows/vulkan-feature-compat.yml'
+  pull_request:
+    paths:
+      - 'system/vendor/etc/permissions/**'
+      - 'tests/check-vulkan-features.py'
+      - '.github/workflows/vulkan-feature-compat.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check advertised features
+        run: python3 tests/check-vulkan-features.py

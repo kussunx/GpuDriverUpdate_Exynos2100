@@ -12,6 +12,7 @@ This is an independent maintenance fork of [EliteUI/elitetest1's Exynos 2100 GPU
 - Vendor file permissions and SELinux labels applied by file type.
 - No recursive deletion of arbitrary files named `*shader*` under `/data`. Android can regenerate caches on demand.
 - Standalone installer smoke tests and Git blob checks for both Mali libraries.
+- Keep the Vulkan 1.3 API feature while **not overriding** the ROM's dEQP conformance date with an unverified Android 13 claim.
 
 **Not included:** Vulkan driver upgrades, changes to the contents of `libGLES_mali.so`, kernel changes, or a claim of higher GPU performance.
 

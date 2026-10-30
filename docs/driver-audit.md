@@ -49,3 +49,19 @@ The script checks ELF class, machine and `ET_DYN` for the two main Mali driver b
 ## Same-architecture loader ABI checks
 
 The Vulkan loader stubs already ship in the baseline. Static auditing found the undefined `vkAcquireImageANDROID` symbol in both loader stubs. The auditor now verifies that each pre-existing stub's Vulkan-named undefined dynamic symbols are exported by the **matching-architecture** `libGLES_mali.so`. This does not modify, update or optimize Vulkan; it checks the direct dependency of artifacts already shipped together. A missing export is a static compatibility failure, not a proof of a video playback problem.
+
+## Vulkan 1.3 and dEQP compatibility (Phase 3)
+
+**What changed:** this module no longer overlays `android.software.vulkan.deqp.level.xml`, which asserted the date `2022-03-01` (Android 13 Vulkan dEQP tests) without any conformance evidence in this repository. Android interprets this value as a claim that **all** dEQP test cases up to that date pass; it does not describe the driver API version.
+
+The separate `android.hardware.vulkan.version.xml` remains **unchanged** with API version `1.3.0` (decimal `4206592`). The existing proprietary `libGLES_mali.so` and `vulkan.mali.so` binaries, their ABI and behaviour remain unchanged.
+
+On an Android 11+ ROM with a correctly defined stock dEQP feature flag, the ROM's own tested declaration can now remain effective instead of being replaced by this unverified Android 13 claim. This does **not** downgrade the actual Vulkan API implementation. It also does not prove this proprietary binary actually returns Vulkan 1.3 at runtime: **that still requires a physical-device query and CTS/dEQP validation** on the target device.
+
+**Limitation:** on ROMs which lack a Vulkan dEQP feature flag entirely, removing this override cannot fill the gap. Test the ROM's stock feature declarations if considering support for such configurations. Do not copy a different phone's dEQP test date.
+
+References:
+- [Android Open Source Project: Implement Vulkan](https://source.android.com/docs/core/graphics/implement-vulkan)
+- [Android 16 Compatibility Definition §7.1.4.2](https://source.android.com/docs/compatibility/16/android-16-cdd)
+
+This is a genuine metadata/compatibility correction, **not an internal shader compiler, scheduling, FPS, battery, or flicker fix**.
