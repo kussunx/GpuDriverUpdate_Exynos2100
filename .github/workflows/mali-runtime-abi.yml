@@ -1,0 +1,25 @@
+name: Verify proprietary Mali runtime ABI
+on:
+  push:
+    paths:
+      - 'tools/check-mali-runtime-abi.sh'
+      - '.github/workflows/mali-runtime-abi.yml'
+      - 'system/vendor/lib/egl/**'
+      - 'system/vendor/lib64/egl/**'
+  pull_request:
+    paths:
+      - 'tools/check-mali-runtime-abi.sh'
+      - '.github/workflows/mali-runtime-abi.yml'
+      - 'system/vendor/lib/egl/**'
+      - 'system/vendor/lib64/egl/**'
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify vendor Mali UMD
+        run: |
+          bash -n tools/check-mali-runtime-abi.sh
+          bash tools/check-mali-runtime-abi.sh
