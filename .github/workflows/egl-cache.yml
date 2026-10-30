@@ -1,0 +1,23 @@
+name: Validate Mali EGL cache optimization
+on:
+  push:
+    paths:
+      - 'system.prop'
+      - 'tests/check-cache-policy.sh'
+      - '.github/workflows/egl-cache.yml'
+  pull_request:
+    paths:
+      - 'system.prop'
+      - 'tests/check-cache-policy.sh'
+      - '.github/workflows/egl-cache.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test EGL support and driver integrity
+        run: |
+          sh -n tests/check-cache-policy.sh
+          sh tests/check-cache-policy.sh
