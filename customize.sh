@@ -1,61 +1,80 @@
-# Android magisk customize.sh - Mali GPU driver updater
+#!/system/bin/sh
+# Safe installation of the existing Mali-G78 r38p1 userspace libraries.
+# This file is sourced by the Magisk-compatible module installer.
 
-# Gather Information
-SOC=$(getprop ro.soc.model)
-MODVER=$(grep_prop version $MODPATH/module.prop)
-MODVERCODE=$(grep_prop versionCode $MODPATH/module.prop)
+MODID=$(grep_prop id "$MODPATH/module.prop")
+MODVER=$(grep_prop version "$MODPATH/module.prop")
 
-# Check for conflicting modules
+# Do not mount this Exynos 2100-specific driver on unrelated hardware.
+# The product-board fallbacks cover Samsung Exynos 2100 devices where
+# the SoC properties are absent or use different spellings.
+SOC=$(getprop ro.soc.model 2>/dev/null)
+PLATFORM=$(getprop ro.board.platform 2>/dev/null)
+HARDWARE=$(getprop ro.hardware 2>/dev/null)
+BOARD=$(getprop ro.product.board 2>/dev/null)
+IDENTITY=$(printf '%s' "$SOC $PLATFORM $HARDWARE $BOARD" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')
+
+case "$IDENTITY" in
+  *exynos2100*|*universal2100*|*o1s*|*t2s*|*p3s*|*r9s*) ;;
+  *) abort "Unsupported device: Exynos 2100 is required (SoC=$SOC, platform=$PLATFORM, board=$BOARD)" ;;
+esac
+
+# Refuse installations that would overlay the same Mali userspace libraries.
+# Disabled or scheduled-for-removal modules are ignored.
 check_conflicting_modules() {
-    if [ -d "/data/adb/modules/gpu_driver_mali" ] && [ -f "/data/adb/modules/gpu_driver_mali/module.prop" ]; then
-        ui_print " "
-        ui_print " ✗ Error: Conflicting module detected!"
-        ui_print " "
-        ui_print " Please uninstall old Mali GPU driver module first!"
-        ui_print " "
-        ui_print " Module found: gpu_driver_mali"
-        ui_print " "
-        abort " Installation aborted due to module conflict"
-    fi
+  for root in "${MODULES_DIR:-/data/adb/modules}" "${MODULES_UPDATE_DIR:-/data/adb/modules_update}"; do
+    for module in "$root"/*; do
+      [ -d "$module" ] || continue
+      [ "${module##*/}" = "$MODID" ] && continue
+      [ -f "$module/disable" ] && continue
+      [ -f "$module/remove" ] && continue
+
+      if [ -f "$module/system/vendor/lib/egl/libGLES_mali.so" ] || \
+         [ -f "$module/system/vendor/lib64/egl/libGLES_mali.so" ] || \
+         [ -f "$module/system/vendor/lib/hw/vulkan.mali.so" ] || \
+         [ -f "$module/system/vendor/lib64/hw/vulkan.mali.so" ]; then
+        abort "Conflicting GPU driver module detected: ${module##*/}. Disable or remove it before installing."
+      fi
+    done
+  done
 }
 
-# Display Info
-ui_print " "
-ui_print " Version: $MODVER"
-ui_print " Mali GPU driver updater"
-ui_print " GPU: Mali G78 MP14"
-ui_print " "
+for library in \
+  system/vendor/lib/egl/libGLES_mali.so \
+  system/vendor/lib64/egl/libGLES_mali.so; do
+  [ -f "$MODPATH/$library" ] || abort "Missing required Mali library: $library"
+done
 
-# Check for conflicts before proceeding
 check_conflicting_modules
 
-# Pause before setting permissions
-sleep 1
-
-# Apply permissions for the vendor directory and its subfolders
-set_perm_recursive $MODPATH/system/vendor 0 0 0755 0644 u:object_r:same_process_hal_file:s0
-
-# Pause after setting permissions
-sleep 1
-
-ui_print " - Success"
 ui_print " "
-ui_print " - Final step for Mali GPU driver updater"
-ui_print " - Please wait..."
-
-# GPU Cache Cleaner
-gpu_cache_cleaner() {
-    find "$1" -type f -name '*shader*' -exec rm -f {} \;
-    if [ -e "$1" ]; then
-        :
-    else
-        echo " - $1 cleared"
-    fi
-}
-
-gpu_cache_cleaner "/data"
-gpu_cache_cleaner "/data/user_de/*shader_cache*/code_cache"
-
+ui_print " Exynos 2100 Mali-G78 driver: $MODVER"
+ui_print " Device: ${SOC:-${PLATFORM:-$BOARD}}"
 ui_print " "
-ui_print " - Please reboot!"
+
+# Assign the vendor baseline label first, then specific labels to libraries
+# and permission XML files. Do not indiscriminately label all vendor files as HALs.
+set_perm_recursive "$MODPATH/system/vendor" 0 0 0755 0644 u:object_r:vendor_file:s0 || \
+  abort "Unable to set vendor module permissions"
+
+for library in \
+  system/vendor/lib/egl/libGLES_mali.so \
+  system/vendor/lib64/egl/libGLES_mali.so \
+  system/vendor/lib/hw/vulkan.mali.so \
+  system/vendor/lib64/hw/vulkan.mali.so; do
+  [ -f "$MODPATH/$library" ] || continue
+  set_perm "$MODPATH/$library" 0 0 0644 u:object_r:same_process_hal_file:s0 || \
+    abort "Unable to set permissions on $library"
+done
+
+for xml in "$MODPATH"/system/vendor/etc/permissions/*.xml; do
+  [ -f "$xml" ] || continue
+  set_perm "$xml" 0 0 0644 u:object_r:vendor_configs_file:s0 || \
+    abort "Unable to set permissions on ${xml##*/}"
+done
+
+# Android regenerates shader caches when necessary. Never delete arbitrary
+# files under /data during module installation.
+ui_print " Mali libraries installed; user data and shader caches left untouched."
+ui_print " Please reboot."
 ui_print " "
