@@ -1,0 +1,23 @@
+name: Validate Mali module
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Shell syntax
+        run: |
+          sh -n customize.sh
+          sh -n tests/install-smoke.sh
+          sh -n tools/verify-mali-blobs.sh
+      - name: Installer regression tests
+        run: sh tests/install-smoke.sh
+      - name: Verify unchanged Mali libraries
+        run: sh tools/verify-mali-blobs.sh
