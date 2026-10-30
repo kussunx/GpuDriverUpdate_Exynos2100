@@ -66,4 +66,4 @@ if [[ $failures -gt 0 ]]; then
   printf '**Audit failed:** %d file(s) missing or with mismatched ELF headers.\n' "$failures"
   exit 1
 fi
-printf '**Audit complete:** ELF architectures and shared-object types match installation paths.\n
+printf '**Audit complete:** ELF architectures and shared-object types match installation paths.\n'
